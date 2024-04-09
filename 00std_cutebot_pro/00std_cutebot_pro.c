@@ -1,4 +1,5 @@
 #include "nrf52833.h"
+#include <stdio.h>
 
 /*
 sources:
@@ -19,12 +20,17 @@ motor control
     0x88,
 ]
 */
-#define MOTOR_SPEED 50 // [0...100]
-uint8_t I2CBUF_MOTOR_LEFT_FWD[]   = {0x99,0x01,0x01,0x01,MOTOR_SPEED,0x00,0x88};
-uint8_t I2CBUF_MOTOR_LEFT_BACK[]  = {0x99,0x01,0x01,0x00,MOTOR_SPEED,0x00,0x88};
+#define MOTOR_FAST 50 // [0...100]
+#define MOTOR_SLOW 10 // [0...100]
+uint8_t I2CBUF_MOTOR_LEFT_FWD_FAST[]   = {0x99,0x01,0x01,0x01,MOTOR_FAST,0x00,0x88};
+uint8_t I2CBUF_MOTOR_LEFT_FWD_SLOW[]   = {0x99,0x01,0x01,0x01,MOTOR_SLOW,0x00,0x88};
 
-uint8_t I2CBUF_MOTOR_RIGHT_FWD[]  = {0x99,0x01,0x02,0x01,MOTOR_SPEED,0x00,0x88};
-uint8_t I2CBUF_MOTOR_RIGHT_BACK[] = {0x99,0x01,0x02,0x00,MOTOR_SPEED,0x00,0x88};
+uint8_t I2CBUF_MOTOR_LEFT_BACK[]  = {0x99,0x01,0x01,0x00,MOTOR_FAST,0x00,0x88};
+
+uint8_t I2CBUF_MOTOR_RIGHT_FWD_FAST[]  = {0x99,0x01,0x02,0x01,MOTOR_FAST,0x00,0x88};
+uint8_t I2CBUF_MOTOR_RIGHT_FWD_SLOW[]  = {0x99,0x01,0x02,0x01,MOTOR_SLOW,0x00,0x88};
+
+uint8_t I2CBUF_MOTOR_RIGHT_BACK[] = {0x99,0x01,0x02,0x00,MOTOR_FAST,0x00,0x88};
 
 uint8_t I2CBUF_MOTORS_STOP[]      = {0x99,0x09,0x03,0x00,0x00,0x00,0x88};
 
@@ -121,30 +127,44 @@ void i2c_send(uint8_t* buf, uint8_t buflen) {
     NRF_TWI0->TASKS_STOP     = 1;
 }
 
+void wait(int loops) {
+    volatile uint32_t a;
+    for (a=0; a<loops;a++){
+      printf("%d\n", a);
+    }
+    printf("Troquei\n");
+}
+
 int main(void) {
     
     i2c_init();
 
+    //Robot walks in zigzags indicating with the LED the side to which it is turning.
+    while(1){
+
     // motor left
-    i2c_send(I2CBUF_MOTOR_LEFT_FWD,    sizeof(I2CBUF_MOTOR_LEFT_FWD));
-    i2c_send(I2CBUF_MOTOR_LEFT_BACK,   sizeof(I2CBUF_MOTOR_LEFT_BACK));
-    i2c_send(I2CBUF_MOTORS_STOP,       sizeof(I2CBUF_MOTORS_STOP));
+    i2c_send(I2CBUF_MOTOR_LEFT_FWD_FAST,    sizeof(I2CBUF_MOTOR_LEFT_FWD_FAST));
     // motor right
-    i2c_send(I2CBUF_MOTOR_RIGHT_FWD,   sizeof(I2CBUF_MOTOR_RIGHT_FWD));
-    i2c_send(I2CBUF_MOTOR_RIGHT_BACK,  sizeof(I2CBUF_MOTOR_RIGHT_BACK));
-    i2c_send(I2CBUF_MOTORS_STOP,       sizeof(I2CBUF_MOTORS_STOP));
-    // led left
-    i2c_send(I2CBUF_LED_LEFT_WHITE,    sizeof(I2CBUF_LED_LEFT_WHITE));
-    i2c_send(I2CBUF_LED_LEFT_RED,      sizeof(I2CBUF_LED_LEFT_RED));
-    i2c_send(I2CBUF_LED_LEFT_GREEN,    sizeof(I2CBUF_LED_LEFT_GREEN));
-    i2c_send(I2CBUF_LED_LEFT_BLUE,     sizeof(I2CBUF_LED_LEFT_BLUE));
-    i2c_send(I2CBUF_LED_LEFT_OFF,      sizeof(I2CBUF_LED_LEFT_OFF));
-    // led right
-    i2c_send(I2CBUF_LED_RIGHT_WHITE,   sizeof(I2CBUF_LED_RIGHT_WHITE));
-    i2c_send(I2CBUF_LED_RIGHT_RED,     sizeof(I2CBUF_LED_RIGHT_RED));
+    i2c_send(I2CBUF_MOTOR_RIGHT_FWD_SLOW,   sizeof(I2CBUF_MOTOR_RIGHT_FWD_SLOW));
+    // led changing
     i2c_send(I2CBUF_LED_RIGHT_GREEN,   sizeof(I2CBUF_LED_RIGHT_GREEN));
-    i2c_send(I2CBUF_LED_RIGHT_BLUE,    sizeof(I2CBUF_LED_RIGHT_BLUE));
-    i2c_send(I2CBUF_LED_RIGHT_OFF,     sizeof(I2CBUF_LED_RIGHT_OFF));
+    i2c_send(I2CBUF_LED_LEFT_OFF,    sizeof(I2CBUF_LED_LEFT_OFF));
+    
+    wait(40000);
+
+    // motor left
+    i2c_send(I2CBUF_MOTOR_LEFT_FWD_SLOW,    sizeof(I2CBUF_MOTOR_LEFT_FWD_SLOW));
+    // motor right
+    i2c_send(I2CBUF_MOTOR_RIGHT_FWD_FAST,   sizeof(I2CBUF_MOTOR_RIGHT_FWD_FAST));
+
+    // led changing
+    i2c_send(I2CBUF_LED_LEFT_GREEN,    sizeof(I2CBUF_LED_LEFT_GREEN));
+    i2c_send(I2CBUF_LED_RIGHT_OFF,   sizeof(I2CBUF_LED_RIGHT_OFF));
+
+    //Different wait time because of different motors power observed.
+    wait(50000);
+
+    }
 
     while(1);
 }

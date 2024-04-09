@@ -1,5 +1,6 @@
 #include "nrf52833.h"
 
+
 #define ROW1_DISCONNECT()    (NRF_P0->PIN_CNF[21]     = 0x00000002 )          // P0.21
 #define ROW2_DISCONNECT()    (NRF_P0->PIN_CNF[22]     = 0x00000002 )          // P0.22
 #define ROW3_DISCONNECT()    (NRF_P0->PIN_CNF[15]     = 0x00000002 )          // P0.15
@@ -122,5 +123,10 @@ int main(void) {
         leds_all_off();
         leds_on(LEDS_SMILEY[i]);
         i = (i+1)%sizeof(LEDS_SMILEY);
+        int counter = 0;
+        while(counter < 10000){
+        counter += 1;
+        }
+        counter = 0;
     }
 }
